@@ -5,30 +5,63 @@
 	<meta name="viewport" content="width=device-width">
 	<title>Vue App </title>
     <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
 </head>
 <body class="container mt-4">
     <div id="app">
         <nav 
         class="navbar navbar-light fixed-top"
-        v-if="cart.length > 0">
+        >
          <div class="navbar-text ml-auto d-flex">
-             <button class="btn btn-sm btn-outline-success"><></button>
-            <b>cart:</b> 
-             <span class="badge bg-danger badge-pill badge-success">{{ cart.length }}</span>
+             <button class="btn btn-sm btn-outline-success"
+             @click="sliderStatus = !sliderStatus">$</button>
+             <div class="ml-2">
+                <button  class="btn btn-success btn-sm dropdown-toggle"
+                    id="cartDropdown" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <b>cart:</b> 
+                <span class="badge bg-danger badge-pill badge-success">{{ cart.length }}</span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-right"
+                aria-labelledby="cartDropdown">
+                    <div v-for="(item, index) in cart" :key="index">
+                        <div class="dropdown-item-text text-nowrap text-right">
+                            <span class= "badge badge-pill badge-warning align-text-top mr-1">{{item.qty}}</span>
+                            {{item.name}}
+                            <b>{{item.price | currency}}</b>
+                        </div>
+                    </div>
+                </div>
+             </div>
+            
           </div>
         </nav>
+        
          <h1>My Shop</h1>
-         <div class="align-items-center" :class="sliderState">
-            <label :class="labelArray" for="formMax">max</label>
-            <input type="text" id="formMax" class="form-control mx-3"
-            :style="{'width': inputWidth + 'px', 'text-align': inputTextAlignment }" v-model="maximum">
-            <input type="range" class="custom-range" min="0" max="200" v-model="maximum"> 
-         </div>
-         
-          <div class="row d-flex mb-3 align-items-center"
-               v-for="item in products"
-               v-if="item.price <= Number(maximum)">
+         <transition name="fade" 
+         enter-active-class="animated fadeInDown"
+         leave-active-class="animated slideOutRight">
+            <div v-if="sliderStatus">
+                <div class="align-items-center" :class="sliderState">
+                    <label :class="labelArray" for="formMax">max</label>
+                    <input type="text" id="formMax" class="form-control mx-3"
+                    :style="{'width': inputWidth + 'px', 'text-align': inputTextAlignment }" v-model="maximum">
+                    <input type="range" class="custom-range" min="0" max="200" v-model="maximum"> 
+                </div>
+            </div>
+         </transition>
+        <transition-group name="fade" tag="div"
+        @beforeEnter="beforeEnter"
+        @enter="enter"
+        @leave="leave">
+          <div class="row d-none mb-3 align-items-center"
+               v-for="(item,index) in products" :key="item.id"
+               v-if="item.price <= Number(maximum)">    
            <div class="col-1 m-auto">
             <button class="btn btn-info" v-on:click="addItem(item)">+</button>
            </div>
@@ -38,22 +71,25 @@
            <div class="col">
              <h3 class="text-info">{{ item.name }}</h3>
              <p class="mb-0">{{ item.description }}</p>
-             <div class="h5 float-right">${{ Number(item.price) }}</div>     
+             <div class="h5 float-right">{{ item.price | currency }}</div>     
             </div>
           </div>
+        </transition-group>
         </div>
       
-	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
-	<script src="https://cdn.jsdelivr.net/npm/vue@2.5.22/dist/vue.js"></script>
+	
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+	    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.22/dist/vue.js"></script>
 	<script>
-        
+        // Vue.filter('filterName', function(){
+        //    for creating filter outside the vue app to use elsewhere
+        // });
 		var app = new Vue ({
 			el: '#app',
 			data: {
                 labelArray: ['font-weight-bold', 'mr-2'],
                 inputWidth: 60,
-                sliderStatus: true,
+                sliderStatus: false,
                 inputTextAlignment: 'center',
                 maximum: 99,
                 products: null,
@@ -63,11 +99,31 @@
             methods: {
                 addItem: function(product){
                     this.cart.push(product);
+                },
+                beforeEnter: function(el){
+                    el.className='d-none'
+                },
+                enter: function(el){
+                    var delay = el.dataset.index * 100;
+                    setTimeout( function() {
+                        el.className= 'row d-flex mb-3 align-item-center animate fadeInRight'
+                    }, delay);
+                },
+                leave: function(el){
+                    var delay = el.dataset.index * 100;
+                    setTimeout( function() {
+                        el.className= 'row d-flex mb-3 align-item-center animate fadeOutRight'
+                    }, delay);
                 }
             },
             computed: {
                 sliderState: function() {
                     return this.sliderStatus ? 'd-flex' : 'd-none'
+                }
+            },
+            filters: {
+                currency:function(value){
+                    return '$' + Number.parseFloat(value).toFixed(2);
                 }
             },
             mounted: function() {
@@ -80,5 +136,6 @@
         });
 	</script>
 </body>
+
 	
 </html>
